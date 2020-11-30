@@ -1,0 +1,25 @@
+on:
+  push:
+
+name: Build > Release
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get docker stacks
+        run: |
+          git clone https://github.com/jupyter/docker-stacks
+      - name: Build jupyter-notebook images
+        run: |
+          export OWNER="${{ github.repository_owner }}" 
+          make DARGS="--build-arg BASE_CONTAINER=jupyter/datascience-notebook" -C docker-stacks build/tensorflow-notebook
+      - name: Build final image and push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ${{ github.repository }}
+          tags: latest
